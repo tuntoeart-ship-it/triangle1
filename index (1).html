@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>สื่อการเรียนรู้ 3D: ความเท่ากันทุกประการ (Congruence)</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0a1b2a;--bd:rgba(255,255,255,.26);--tx:#eaf6ff;--mut:#a9c7da;--a:#38bdf8;--b:#fb7185;--ok:#34d399;--no:#f87171}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Sarabun','Noto Sans Thai','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);overflow:hidden}
+#app{display:grid;grid-template-columns:1fr 410px;height:100vh}
+#stage{position:relative;min-width:0;min-height:0;overflow:hidden}
+#cv{display:block;width:100%;height:100%;outline:0;cursor:grab}
+#cv:active{cursor:grabbing}
+.glass{background:rgba(255,255,255,.13);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid var(--bd);border-radius:16px;box-shadow:0 8px 32px rgba(0,20,40,.28)}
+#hud{position:absolute;top:14px;left:14px;padding:9px 16px;display:flex;flex-direction:column;pointer-events:none}
+#hud b{font-size:17px}#hud span{font-size:12px;color:var(--mut)}
+#views{position:absolute;top:14px;right:14px;display:flex;gap:6px;padding:6px}
+button{font-family:inherit;cursor:pointer}
+.vb{background:transparent;border:0;color:var(--tx);padding:6px 12px;border-radius:10px;font-size:13px;transition:.2s}
+.vb:hover{background:rgba(255,255,255,.22)}
+#hint{position:absolute;bottom:14px;right:14px;padding:7px 14px;font-size:12px;color:var(--mut);pointer-events:none}
+#hsl{position:absolute;inset:0;pointer-events:none}
+.hs{position:absolute;left:0;top:0;width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:50%;border:2px solid #fff;color:#fff;font-weight:700;font-size:14px;pointer-events:auto;box-shadow:0 0 14px rgba(0,0,0,.35);transition:transform .15s}
+.hs::after{content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid currentColor;animation:pl 1.8s infinite;pointer-events:none}
+.hs:hover{filter:brightness(1.2)}
+@keyframes pl{0%{transform:scale(.7);opacity:.9}100%{transform:scale(1.7);opacity:0}}
+#card{position:absolute;left:14px;bottom:14px;width:min(340px,calc(100% - 28px));padding:16px 18px 16px 22px;opacity:0;transform:translateY(18px) scale(.97);pointer-events:none;transition:.35s cubic-bezier(.2,.9,.3,1.2);overflow:hidden}
+#card.on{opacity:1;transform:none;pointer-events:auto}
+#card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--cc,#38bdf8)}
+#card h4{font-size:16px;margin-bottom:6px;color:var(--cc,#38bdf8)}
+#card p{font-size:14px;line-height:1.55;animation:fi .45s}
+#cx{position:absolute;right:8px;top:6px;background:none;border:0;color:var(--tx);font-size:20px}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+aside{overflow-y:auto;padding:18px;background:radial-gradient(circle at 80% 0,rgba(56,189,248,.22),transparent 55%),radial-gradient(circle at 0 100%,rgba(251,113,133,.16),transparent 50%),#0d2236;border-left:1px solid var(--bd)}
+aside::-webkit-scrollbar{width:7px}aside::-webkit-scrollbar-thumb{background:rgba(255,255,255,.25);border-radius:5px}
+.badge{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;padding:3px 12px;border-radius:99px;background:rgba(56,189,248,.22);color:#bfe9ff;border:1px solid rgba(56,189,248,.45)}
+h1{font-size:23px;margin:8px 0 2px;line-height:1.25}
+.sub{font-size:13px;color:var(--mut);margin-bottom:14px}
+.box{padding:14px 16px;margin-bottom:14px}
+.box h2{font-size:15px;margin-bottom:8px;color:#bfe9ff}
+.box p{font-size:13.5px;line-height:1.6;color:#d4e8f5}
+.row{margin-bottom:11px}
+.row label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px}
+.row label em{font-style:normal;font-weight:600;color:#7dd3fc}
+.row.d label em{color:#fda4af}
+input[type=range]{width:100%;height:6px;border-radius:4px;appearance:none;-webkit-appearance:none;background:rgba(255,255,255,.22);outline:0}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#38bdf8;border:2px solid #fff;cursor:pointer}
+.row.d input[type=range]::-webkit-slider-thumb{background:#fb7185}
+input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:#38bdf8;border:2px solid #fff}
+input[type=range]:disabled{opacity:.4}
+.sw{display:flex;align-items:center;gap:10px;font-size:13px;margin:8px 0;cursor:pointer}
+.sw input{display:none}
+.sw i{width:38px;height:21px;border-radius:99px;background:rgba(255,255,255,.25);position:relative;transition:.25s;flex:none}
+.sw i::after{content:"";position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.25s}
+.sw input:checked+i{background:#0ea5e9}
+.sw input:checked+i::after{transform:translateX(17px)}
+#status{padding:11px 14px;border-radius:12px;font-size:14px;font-weight:600;text-align:center;margin-bottom:14px;transition:.4s;border:1px solid}
+#status.ok{background:rgba(52,211,153,.2);border-color:rgba(52,211,153,.6);color:#a7f3d0}
+#status.no{background:rgba(248,113,113,.18);border-color:rgba(248,113,113,.6);color:#fecaca}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 4px;text-align:center;border-bottom:1px solid rgba(255,255,255,.12)}
+th{color:var(--mut);font-weight:600}th:first-child,td:first-child{text-align:left}
+.t1{color:#7dd3fc}.t2{color:#fda4af}
+.yes{color:var(--ok);font-weight:700}.nop{color:var(--no);font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{border:1px solid var(--bd);background:rgba(255,255,255,.1);color:var(--tx);padding:6px 12px;border-radius:99px;font-size:12.5px;transition:.2s}
+.chip:hover{background:rgba(255,255,255,.25);transform:translateY(-2px)}
+.q{margin-bottom:14px}
+.q p{font-size:14px;font-weight:600;margin-bottom:6px;line-height:1.5}
+.q label{display:block;font-size:13.5px;padding:7px 11px;margin:4px 0;border-radius:10px;background:rgba(255,255,255,.08);border:1px solid transparent;cursor:pointer;transition:.2s}
+.q label:hover{background:rgba(255,255,255,.17)}
+.q input{margin-right:8px;accent-color:#38bdf8}
+.fb{font-size:12.5px;margin-top:6px;padding:8px 10px;border-radius:9px;line-height:1.5;animation:fi .4s}
+.fb.g{background:rgba(52,211,153,.2);color:#a7f3d0}.fb.r{background:rgba(248,113,113,.2);color:#fecaca}
+.btn{background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff;border:0;padding:10px 20px;border-radius:12px;font-weight:600;font-size:14px;transition:.2s;box-shadow:0 6px 18px rgba(14,165,233,.35)}
+.btn:hover{transform:translateY(-2px)}
+.btn.s{background:rgba(255,255,255,.14);box-shadow:none;margin-left:6px}
+#score{margin-top:10px;font-weight:700;font-size:15px;color:#fde68a}
+@media(max-width:900px){body{overflow:hidden}#app{grid-template-columns:1fr;grid-template-rows:52% 48%}aside{border-left:0;border-top:1px solid var(--bd)}#views{top:62px;right:auto;left:14px}#hint{display:none}}
+</style>
+</head>
+<body>
+<div id="app">
+<section id="stage">
+<canvas id="cv"></canvas>
+<div id="hud" class="glass"><b>△ ความเท่ากันทุกประการ</b><span>3D Interactive • วิทย์-คณิต สารสาสน์พิทยา</span></div>
+<div id="views" class="glass">
+<button class="vb" data-v="0">มุมหน้า</button>
+<button class="vb" data-v="1">มุมบน</button>
+<button class="vb" data-v="2">น้ำตก</button>
+</div>
+<div id="hsl"></div>
+<div id="card" class="glass"><button id="cx" aria-label="ปิด">×</button><h4 id="ct"></h4><p id="cb"></p></div>
+<div id="hint" class="glass">ลาก = หมุน • คลิกขวา/สองนิ้ว = แพน • ล้อเมาส์ = ซูม</div>
+</section>
+<aside>
+<span class="badge">ม.ต้น • เรขาคณิต</span>
+<h1>ความเท่ากันทุกประการ</h1>
+<p class="sub">ทดลองปรับรูปสามเหลี่ยม 3 มิติ แล้วสังเกตว่าทับกันสนิทหรือไม่</p>
+
+<div class="glass box">
+<h2>🎯 วัตถุประสงค์การเรียนรู้</h2>
+<p>นักเรียนสามารถบอกได้ว่ารูปสามเหลี่ยมสองรูปเท่ากันทุกประการหรือไม่ โดยสังเกตจากการทับกันได้สนิทพอดีเมื่อมีขนาดความยาวด้านและขนาดของมุมที่สอดคล้องกัน</p>
+</div>
+
+<div class="glass box">
+<h2>🎛 ปรับค่าตัวแปร</h2>
+<div class="row"><label>△ABC ความยาวฐาน <em id="vbA"></em></label><input type="range" id="sbA" min="100" max="200" value="150"></div>
+<div class="row"><label>△ABC มุมยอด <em id="vaA"></em></label><input type="range" id="saA" min="30" max="120" value="60"></div>
+<div class="row d"><label>△DEF ความยาวฐาน <em id="vbD"></em></label><input type="range" id="sbD" min="100" max="200" value="150"></div>
+<div class="row d"><label>△DEF มุมยอด <em id="vaD"></em></label><input type="range" id="saD" min="30" max="120" value="60"></div>
+<label class="sw"><input type="checkbox" id="lock" checked><i></i>ล็อก DEF ให้เหมือน ABC (ยกเลิกเพื่อทดลองให้ไม่เท่ากัน)</label>
+<label class="sw"><input type="checkbox" id="ov"><i></i>ย้ายรูปมาทับกันเพื่อพิสูจน์</label>
+<label class="sw"><input type="checkbox" id="arc" checked><i></i>แสดงมุม (เหลือง = มุมยอด, เขียว = มุมฐาน)</label>
+<label class="sw"><input type="checkbox" id="rot"><i></i>หมุนกล้องอัตโนมัติ</label>
+</div>
+
+<div id="status" class="ok"></div>
+
+<div class="glass box">
+<h2>📐 เปรียบเทียบค่าที่สมนัยกัน</h2>
+<table><thead><tr><th>ค่า</th><th class="t1">△ABC</th><th class="t2">△DEF</th><th></th></tr></thead><tbody id="tb"></tbody></table>
+</div>
+
+<div class="glass box">
+<h2>📍 จุดโต้ตอบ (Hotspots)</h2>
+<div class="chips" id="chips"></div>
+</div>
+
+<div class="glass box">
+<h2>🌊 น้ำตกประกอบฉาก</h2>
+<div class="row"><label>ปริมาณน้ำ <em id="vfl"></em></label><input type="range" id="fl" min="0" max="100" value="70"></div>
+<label class="sw"><input type="checkbox" id="snd"><i></i>เสียงน้ำตก</label>
+</div>
+
+<div class="glass box">
+<h2>📝 แบบประเมินความรู้ท้ายกิจกรรม (3 ข้อ)</h2>
+<div id="quiz"></div>
+<button class="btn" id="qs">ส่งคำตอบและดูเฉลย</button><button class="btn s" id="qr">ล้างคำตอบ</button>
+<div id="score"></div>
+</div>
+</aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+(function(){
+var $=function(id){return document.getElementById(id)};
+var S=0.016,SY=0.2;
+var stage=$('stage'),cv=$('cv');
+var renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+var scene=new THREE.Scene();
+var sk=document.createElement('canvas');sk.width=2;sk.height=256;
+var sx=sk.getContext('2d'),sg=sx.createLinearGradient(0,0,0,256);
+sg.addColorStop(0,'#3b82c4');sg.addColorStop(.55,'#8ec9ee');sg.addColorStop(1,'#d9f0fb');
+sx.fillStyle=sg;sx.fillRect(0,0,2,256);
+var skyT=new THREE.CanvasTexture(sk);skyT.encoding=THREE.sRGBEncoding;
+scene.background=skyT;
+scene.fog=new THREE.Fog(0xbfe3f5,30,75);
+var camera=new THREE.PerspectiveCamera(45,1,.1,200);
+camera.position.set(0,5.5,15);
+var controls=new THREE.OrbitControls(camera,cv);
+controls.enableDamping=true;controls.dampingFactor=.07;
+controls.target.set(0,2.2,0);
+controls.minDistance=5;controls.maxDistance=34;
+controls.maxPolarAngle=Math.PI/2-.04;
+controls.autoRotateSpeed=1.2;
+scene.add(new THREE.HemisphereLight(0xdff3ff,0x4a6b3a,.75));
+var sun=new THREE.DirectionalLight(0xfff1d6,1.15);
+sun.position.set(8,14,7);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.left=-15;sun.shadow.camera.right=15;sun.shadow.camera.top=15;sun.shadow.camera.bottom=-15;
+sun.shadow.camera.near=1;sun.shadow.camera.far=50;sun.shadow.bias=-.0005;
+scene.add(sun);
+
+function dotTex(){
+var k=document.createElement('canvas');k.width=k.height=64;
+var x=k.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);
+g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(.4,'rgba(255,255,255,.55)');g.addColorStop(1,'rgba(255,255,255,0)');
+x.fillStyle=g;x.fillRect(0,0,64,64);
+return new THREE.CanvasTexture(k);
+}
+var DOT=dotTex();
+
+var ground=new THREE.Mesh(new THREE.CircleGeometry(45,72),new THREE.MeshStandardMaterial({color:0x5fa45a,roughness:1}));
+ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+var plat=new THREE.Mesh(new THREE.CylinderGeometry(6.4,6.7,.2,72),new THREE.MeshStandardMaterial({color:0xe8eef5,roughness:.5,metalness:.05}));
+plat.position.y=.1;plat.receiveShadow=true;plat.castShadow=true;scene.add(plat);
+var glow=new THREE.Mesh(new THREE.TorusGeometry(6.45,.045,8,120),new THREE.MeshBasicMaterial({color:0x38bdf8}));
+glow.rotation.x=Math.PI/2;glow.position.y=.21;scene.add(glow);
+
+var rock=new THREE.MeshStandardMaterial({color:0x7b8794,roughness:.95,flatShading:true});
+function addRock(geo,x,y,z,sx,sy,sz){
+var m=new THREE.Mesh(geo,rock);m.position.set(x,y,z);m.scale.set(sx,sy,sz);
+m.castShadow=true;m.receiveShadow=true;scene.add(m);return m;
+}
+addRock(new THREE.BoxGeometry(5.4,5.5,2.6),-6.5,2.75,-6.85,1,1,1);
+addRock(new THREE.DodecahedronGeometry(2,0),-9.4,1.5,-6.4,1,.9,1.2);
+addRock(new THREE.DodecahedronGeometry(1.8,0),-3.5,1.1,-7,1,.75,1.1);
+addRock(new THREE.DodecahedronGeometry(1.5,0),-6.5,5.6,-7.2,1.3,.7,1);
+var cap=new THREE.Mesh(new THREE.BoxGeometry(5.6,.25,2.8),new THREE.MeshStandardMaterial({color:0x4f9a4a,roughness:1}));
+cap.position.set(-6.5,5.62,-6.85);cap.castShadow=true;scene.add(cap);
+
+var pool=new THREE.Mesh(new THREE.CircleGeometry(2.7,64),new THREE.MeshPhysicalMaterial({color:0x2fa0d8,roughness:.08,metalness:0,transparent:true,opacity:.88,clearcoat:1,clearcoatRoughness:.1}));
+pool.rotation.x=-Math.PI/2;pool.position.set(-6.5,.07,-3.9);pool.receiveShadow=true;scene.add(pool);
+var rim=new THREE.Mesh(new THREE.TorusGeometry(2.75,.22,8,40),rock);
+rim.rotation.x=Math.PI/2;rim.position.set(-6.5,.1,-3.9);rim.castShadow=true;rim.receiveShadow=true;scene.add(rim);
+
+var WX=-6.5,WTOP=5.45,WZ=-5.5,WBOT=.1;
+var ribMat=new THREE.ShaderMaterial({
+uniforms:{t:{value:0},k:{value:.7}},
+transparent:true,depthWrite:false,side:THREE.DoubleSide,
+vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
+fragmentShader:'uniform float t;uniform float k;varying vec2 vUv;float h(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}float n(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);return mix(mix(h(i),h(i+vec2(1.0,0.0)),f.x),mix(h(i+vec2(0.0,1.0)),h(i+vec2(1.0,1.0)),f.x),f.y);}void main(){float s=n(vec2(vUv.x*14.0,vUv.y*3.0+t*3.0))*0.6+n(vec2(vUv.x*32.0,vUv.y*7.0+t*5.5))*0.4;float e=smoothstep(0.0,0.1,vUv.x)*smoothstep(1.0,0.9,vUv.x);vec3 c=mix(vec3(0.3,0.68,0.95),vec3(1.0),s*s);c=mix(c,vec3(1.0),smoothstep(0.18,0.0,vUv.y));float a=(0.3+0.55*s)*e*smoothstep(0.0,0.04,vUv.y)*k;gl_FragColor=vec4(c,a);}'
+});
+var rib=new THREE.Mesh(new THREE.PlaneGeometry(2.4,WTOP-WBOT,1,1),ribMat);
+rib.position.set(WX,(WTOP+WBOT)/2,WZ+.03);scene.add(rib);
+
+var NP=900,pp=new Float32Array(NP*3),pv=new Float32Array(NP),pg=new THREE.BufferGeometry();
+function resetP(i,rnd){
+pp[i*3]=WX+(Math.random()-.5)*2.2;
+pp[i*3+1]=rnd?WBOT+Math.random()*(WTOP-WBOT):WTOP;
+pv[i]=.8+Math.random()*1.2;
+}
+for(var i=0;i<NP;i++)resetP(i,true);
+pg.setAttribute('position',new THREE.BufferAttribute(pp,3));
+var wp=new THREE.Points(pg,new THREE.PointsMaterial({map:DOT,color:0xeaf8ff,size:.2,transparent:true,opacity:.85,depthWrite:false,blending:THREE.AdditiveBlending}));
+wp.frustumCulled=false;scene.add(wp);
+
+var NM=170,mp=new Float32Array(NM*3),mg=new THREE.BufferGeometry();
+function resetM(i,rnd){
+mp[i*3]=WX+(Math.random()-.5)*3.6;
+mp[i*3+1]=rnd?Math.random()*2.4:.1;
+mp[i*3+2]=-5.1+(Math.random()-.3)*1.8;
+}
+for(var j=0;j<NM;j++)resetM(j,true);
+mg.setAttribute('position',new THREE.BufferAttribute(mp,3));
+var mist=new THREE.Points(mg,new THREE.PointsMaterial({map:DOT,color:0xffffff,size:1.7,transparent:true,opacity:.2,depthWrite:false}));
+mist.frustumCulled=false;scene.add(mist);
+
+var ripples=[];
+for(var r=0;r<4;r++){
+var rm=new THREE.Mesh(new THREE.RingGeometry(.92,1,48),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,side:THREE.DoubleSide,depthWrite:false}));
+rm.rotation.x=-Math.PI/2;rm.position.set(WX,.1,-5.15);scene.add(rm);ripples.push(rm);
+}
+
+[[-11,-1],[-12,4],[10,-7],[12,-1],[9,-12],[-8.5,-11],[13,5],[-14,-6],[0,-14]].forEach(function(p,n){
+var s=.85+(n%3)*.2,tr=new THREE.Mesh(new THREE.CylinderGeometry(.18*s,.24*s,1.3*s,8),new THREE.MeshStandardMaterial({color:0x6b4a2f,roughness:1}));
+tr.position.set(p[0],.65*s,p[1]);tr.castShadow=true;scene.add(tr);
+[0,1].forEach(function(l){
+var c=new THREE.Mesh(new THREE.ConeGeometry((1.2-l*.35)*s,(2.1-l*.3)*s,9),new THREE.MeshStandardMaterial({color:l?0x2f8f55:0x287a49,roughness:.9,flatShading:true}));
+c.position.set(p[0],(1.9+l*1.2)*s,p[1]);c.castShadow=true;scene.add(c);
+});
+});
+
+function labelTex(t,c){
+var k=document.createElement('canvas');k.width=k.height=128;
+var x=k.getContext('2d');
+x.fillStyle=c;x.beginPath();x.arc(64,64,56,0,7);x.fill();
+x.lineWidth=6;x.strokeStyle='#fff';x.stroke();
+x.fillStyle='#fff';x.font='bold 70px Sarabun,sans-serif';x.textAlign='center';x.textBaseline='middle';
+x.fillText(t,64,70);
+var tx=new THREE.CanvasTexture(k);tx.encoding=THREE.sRGBEncoding;return tx;
+}
+
+function makeTri(hex,css,edgeHex,L){
+var g=new THREE.Group();
+var mat=new THREE.MeshStandardMaterial({color:hex,roughness:.3,metalness:.15,transparent:true});
+var body=new THREE.Mesh(new THREE.BufferGeometry(),mat);
+body.castShadow=true;body.receiveShadow=true;
+var edge=new THREE.LineSegments(new THREE.BufferGeometry(),new THREE.LineBasicMaterial({color:edgeHex}));
+var arcs=new THREE.Group();
+var am=new THREE.MeshBasicMaterial({color:0xfacc15,side:THREE.DoubleSide,transparent:true,opacity:.9});
+var bm=new THREE.MeshBasicMaterial({color:0x34d399,side:THREE.DoubleSide,transparent:true,opacity:.9});
+var sp=L.map(function(t){
+var s=new THREE.Sprite(new THREE.SpriteMaterial({map:labelTex(t,css),depthTest:false}));
+s.scale.set(.62,.62,1);s.renderOrder=9;g.add(s);return s;
+});
+var an={left:new THREE.Object3D(),right:new THREE.Object3D(),apex:new THREE.Object3D(),mid:new THREE.Object3D()};
+g.add(body,edge,arcs,an.left,an.right,an.apex,an.mid);
+function rebuild(base,apex,depth){
+var b=base*S,ar=apex*Math.PI/180,h=b/2/Math.tan(ar/2),beta=(Math.PI-ar)/2;
+var sh=new THREE.Shape();sh.moveTo(-b/2,0);sh.lineTo(b/2,0);sh.lineTo(0,h);sh.closePath();
+var geo=new THREE.ExtrudeGeometry(sh,{depth:depth,bevelEnabled:true,bevelSize:.03,bevelThickness:.03,bevelSegments:2});
+geo.translate(0,0,-depth/2);
+body.geometry.dispose();body.geometry=geo;
+edge.geometry.dispose();edge.geometry=new THREE.EdgesGeometry(geo,30);
+while(arcs.children.length){var o=arcs.children[0];arcs.remove(o);o.geometry.dispose();}
+var rr=Math.min(.55,b*.2);
+[1,-1].forEach(function(s){
+var z=s*(depth/2+.06);
+var m1=new THREE.Mesh(new THREE.CircleGeometry(rr,24,-Math.PI/2-ar/2,ar),am);m1.position.set(0,h,z);
+var m2=new THREE.Mesh(new THREE.CircleGeometry(rr,24,0,beta),bm);m2.position.set(-b/2,0,z);
+var m3=new THREE.Mesh(new THREE.CircleGeometry(rr,24,Math.PI-beta,beta),bm);m3.position.set(b/2,0,z);
+arcs.add(m1,m2,m3);
+});
+sp[0].position.set(-b/2-.32,-.08,0);
+sp[1].position.set(b/2+.32,-.08,0);
+sp[2].position.set(0,h+.38,0);
+an.left.position.set(-b/2,0,0);
+an.right.position.set(b/2,0,0);
+an.apex.position.set(0,h,0);
+an.mid.position.set(0,0,depth/2+.03);
+}
+return {g:g,mat:mat,an:an,arcs:arcs,rebuild:rebuild};
+}
+
+var A=makeTri(0x38bdf8,'#0ea5e9',0xdff6ff,['A','B','C']);
+var D=makeTri(0xfb7185,'#e11d48',0xffe0e6,['D','E','F']);
+D.mat.polygonOffset=true;D.mat.polygonOffsetFactor=-1;D.mat.polygonOffsetUnits=-1;
+A.g.position.set(-2.8,SY,0);
+scene.add(A.g,D.g);
+var apart=new THREE.Vector3(2.8,SY,.5),apartRot=-.5;
+
+var P={bA:150,aA:60,bD:150,aD:60,lock:true,ov:false,ovT:0,flow:.7,pulse:0,eqPrev:true,rot:false,snd:false};
+var card=-1;
+
+function eq(){return P.bA===P.bD&&P.aA===P.aD}
+function leg(b,a){return Math.round(b/2/Math.sin(a*Math.PI/360))}
+function beta(a){var v=(180-a)/2;return Math.round(v*10)/10}
+
+var HS=[
+{n:'1',t:'ด้าน AB (ฐาน)',c:'#38bdf8',v:0,pt:function(){return A.an.mid},f:function(){
+return 'ฐานของ △ABC ยาว <b>'+P.bA+'</b> หน่วย ด้านที่สมนัยกันคือ DE ยาว <b>'+P.bD+'</b> หน่วย '+(P.bA===P.bD?'<b style="color:#6ee7b7">ยาวเท่ากัน ✓</b>':'<b style="color:#fca5a5">ยาวไม่เท่ากัน ✕ จึงทับกันไม่สนิท</b>');}},
+{n:'2',t:'มุมยอด C',c:'#facc15',v:0,pt:function(){return A.an.apex},f:function(){
+return 'มุมยอด ∠C = <b>'+P.aA+'°</b> สมนัยกับ ∠F = <b>'+P.aD+'°</b> '+(P.aA===P.aD?'<b style="color:#6ee7b7">ขนาดมุมเท่ากัน ✓</b>':'<b style="color:#fca5a5">ขนาดมุมไม่เท่ากัน ✕</b>');}},
+{n:'3',t:'มุมฐาน A และ B',c:'#34d399',v:0,pt:function(){return A.an.left},f:function(){
+return 'เป็นสามเหลี่ยมหน้าจั่ว ∠A = ∠B = <b>'+beta(P.aA)+'°</b> เมื่อรวมสามมุมจะได้ '+P.aA+' + '+beta(P.aA)+' + '+beta(P.aA)+' = <b>180°</b> เสมอ';}},
+{n:'4',t:'△DEF (รูปเปรียบเทียบ)',c:'#fb7185',v:0,pt:function(){return D.an.apex},f:function(){
+return eq()?'△DEF มีฐาน '+P.bD+' หน่วย และมุมยอด '+P.aD+'° เหมือน △ABC ลองเปิด "ย้ายรูปมาทับกัน" แล้วดูว่าทับกันสนิท':'△DEF ไม่ตรงกับ △ABC ลองเปิด "ย้ายรูปมาทับกัน" จะเห็นส่วนที่ยื่นเกินออกมา';}},
+{n:'5',t:'น้ำตกและสระน้ำ',c:'#7dd3fc',v:2,pt:function(){return WPT},f:function(){
+return 'ผิวน้ำในสระสะท้อนภาพของสิ่งรอบข้าง การสะท้อน การเลื่อน และการหมุน เป็นการแปลงที่ไม่เปลี่ยนขนาดและรูปร่าง ภาพที่ได้จึง<b>เท่ากันทุกประการ</b>กับของจริง';}}
+];
+var WPT=new THREE.Object3D();WPT.position.set(-6.5,3,-5.3);scene.add(WPT);
+
+var hsl=$('hsl'),hsEls=[],chips=$('chips');
+HS.forEach(function(h,i){
+var b=document.createElement('button');b.className='hs';b.textContent=h.n;b.style.background=h.c;b.style.color='#fff';b.title=h.t;
+b.addEventListener('click',function(){showCard(i)});hsl.appendChild(b);hsEls.push(b);
+var c=document.createElement('button');c.className='chip';c.textContent=h.n+'. '+h.t;
+c.addEventListener('click',function(){showCard(i)});chips.appendChild(c);
+
+});
+
+function showCard(i,quiet){
+card=i;var h=HS[i],el=$('card');
+$('ct').textContent=h.t;$('cb').innerHTML=h.f();
+el.style.setProperty('--cc',h.c);
+if(!quiet){
+el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
+$('cb').style.animation='none';void $('cb').offsetWidth;$('cb').style.animation='';
+if(h.v===2)flyTo(2);
+}else el.classList.add('on');
+}
+$('cx').addEventListener('click',function(){card=-1;$('card').classList.remove('on')});
+
+var VIEWS=[
+{p:new THREE.Vector3(0,5.5,15),t:new THREE.Vector3(0,2.2,0)},
+{p:new THREE.Vector3(0,18,4.5),t:new THREE.Vector3(0,0,0)},
+{p:new THREE.Vector3(-1.5,3.6,3.2),t:new THREE.Vector3(-6.5,2.6,-5)}
+];
+var fly=null;
+function flyTo(i){fly={p:VIEWS[i].p,t:VIEWS[i].t,n:0}}
+document.querySelectorAll('.vb').forEach(function(b){b.addEventListener('click',function(){flyTo(+b.dataset.v)})});
+['pointerdown','wheel'].forEach(function(e){cv.addEventListener(e,function(){fly=null},{passive:true})});
+
+function sync(){
+if(P.lock){P.bD=P.bA;P.aD=P.aA;$('sbD').value=P.bD;$('saD').value=P.aD}
+A.rebuild(P.bA,P.aA,.5);D.rebuild(P.bD,P.aD,.56);
+$('vbA').textContent=P.bA+' หน่วย';$('vaA').textContent=P.aA+'°';
+$('vbD').textContent=P.bD+' หน่วย';$('vaD').textContent=P.aD+'°';
+var rows=[['ด้านฐาน',P.bA,P.bD],['ด้านประกอบมุมยอด',leg(P.bA,P.aA),leg(P.bD,P.aD)],['มุมยอด',P.aA+'°',P.aD+'°'],['มุมฐาน',beta(P.aA)+'°',beta(P.aD)+'°']];
+$('tb').innerHTML=rows.map(function(r){var ok=r[1]===r[2];return '<tr><td>'+r[0]+'</td><td class="t1">'+r[1]+'</td><td class="t2">'+r[2]+'</td><td class="'+(ok?'yes':'nop')+'">'+(ok?'✓':'✕')+'</td></tr>'}).join('');
+var e=eq(),st=$('status');
+st.className=e?'ok':'no';
+st.textContent=e?'✓ รูปทั้งสองเท่ากันทุกประการ (△ABC ≅ △DEF)':'✕ ไม่เท่ากันทุกประการ เพราะ'+(P.bA!==P.bD?'ความยาวด้านไม่เท่ากัน':'ขนาดมุมไม่เท่ากัน');
+if(e&&!P.eqPrev)P.pulse=1;
+P.eqPrev=e;
+if(card>=0)showCard(card,true);
+}
+[['sbA','bA'],['saA','aA'],['sbD','bD'],['saD','aD']].forEach(function(p){
+$(p[0]).addEventListener('input',function(){P[p[1]]=+this.value;sync()});
+});
+$('lock').addEventListener('change',function(){
+P.lock=this.checked;$('sbD').disabled=$('saD').disabled=P.lock;sync();
+});
+$('ov').addEventListener('change',function(){P.ov=this.checked;if(P.ov&&eq())P.pulse=1});
+$('arc').addEventListener('change',function(){A.arcs.visible=D.arcs.visible=this.checked});
+$('rot').addEventListener('change',function(){controls.autoRotate=this.checked});
+
+var au=null;
+function setGain(){if(au)au.g.gain.value=P.snd?P.flow*.55:0}
+$('fl').addEventListener('input',function(){
+P.flow=this.value/100;$('vfl').textContent=this.value+'%';ribMat.uniforms.k.value=P.flow;
+pg.setDrawRange(0,Math.floor(NP*P.flow));mist.material.opacity=.05+.2*P.flow;setGain();
+});
+$('snd').addEventListener('change',function(){
+P.snd=this.checked;
+if(P.snd&&!au){
+var C=window.AudioContext||window.webkitAudioContext,c=new C(),n=c.sampleRate*2,buf=c.createBuffer(1,n,c.sampleRate),d=buf.getChannelData(0),l=0;
+for(var i=0;i<n;i++){l=(l+.02*(Math.random()*2-1))/1.02;d[i]=l*3.5}
+var s=c.createBufferSource();s.buffer=buf;s.loop=true;
+var f=c.createBiquadFilter();f.type='lowpass';f.frequency.value=1400;
+var g=c.createGain();g.gain.value=0;
+s.connect(f);f.connect(g);g.connect(c.destination);s.start();au={c:c,g:g};
+}
+if(au)au.c.resume();
+setGain();
+});
+$('fl').dispatchEvent(new Event('input'));
+$('sbD').disabled=$('saD').disabled=true;
+
+var QZ=[
+{q:'1. รูปสามเหลี่ยมสองรูปจะ เท่ากันทุกประการ ก็ต่อเมื่อตรงกับเงื่อนไขใด?',o:['ก. มีพื้นที่เท่ากันเท่านั้น','ข. สามารถเคลื่อนที่ไปทับกันได้สนิทพอดี','ค. มีขนาดมุมเท่ากัน 3 มุม แต่ความยาวด้านไม่เท่ากัน'],a:1,e:'รูปสองรูปจะเท่ากันทุกประการก็ต่อเมื่อนำมาทับกันได้สนิทพอดี'},
+{q:'2. จากการทดลองปรับตัวแปร หากเปลี่ยนค่า "ความยาวฐาน" ของรูปหนึ่ง แต่ไม่เปลี่ยนอีกรูปหนึ่ง ผลจะเป็นอย่างไร?',o:['ก. รูปทั้งสองยังคงเท่ากันทุกประการ','ข. รูปทั้งสองไม่เท่ากันทุกประการ เพราะความยาวด้านที่สมนัยกันไม่เท่ากัน','ค. สรุปไม่ได้จนกว่าจะวัดขนาดมุมทั้งหมด'],a:1,e:'การเปลี่ยนความยาวด้านทำให้สามเหลี่ยมทั้งสองมีขนาดไม่เท่ากัน จึงไม่เท่ากันทุกประการ'},
+{q:'3. ข้อใดต่อไปนี้ ไม่ใช่ เงื่อนไขของความเท่ากันทุกประการของรูปสามเหลี่ยม?',o:['ก. ด้าน-ด้าน-ด้าน (ด.ด.ด.)','ข. มุม-ด้าน-มุม (ม.ด.ม.)','ค. มุม-มุม-มุม (ม.ม.ม.)'],a:2,e:'ม.ม.ม. เป็นเงื่อนไขของรูปสามเหลี่ยมที่คล้ายกัน แต่ไม่รับประกันว่าเท่ากันทุกประการ'}
+];
+var L3=['ก','ข','ค'];
+$('quiz').innerHTML=QZ.map(function(z,i){
+return '<div class="q"><p>'+z.q+'</p>'+z.o.map(function(o,k){return '<label><input type="radio" name="q'+i+'" value="'+k+'">'+o+'</label>'}).join('')+'<div id="fb'+i+'"></div></div>';
+}).join('');
+$('qs').addEventListener('click',function(){
+var sc=0;
+QZ.forEach(function(z,i){
+var s=document.querySelector('input[name="q'+i+'"]:checked'),f=$('fb'+i),ok=s&&+s.value===z.a;
+if(ok)sc++;
+f.innerHTML='<div class="fb '+(ok?'g':'r')+'">'+(ok?'✓ ถูกต้อง! ':'✕ ยังไม่ถูกต้อง คำตอบที่ถูกคือข้อ '+L3[z.a]+' ')+z.e+'</div>';
+});
+$('score').textContent='คะแนนของคุณ: '+sc+' / '+QZ.length+(sc===3?' 🎉 เยี่ยมมาก!':'');
+});
+$('qr').addEventListener('click',function(){
+document.querySelectorAll('#quiz input').forEach(function(e){e.checked=false});
+QZ.forEach(function(z,i){$('fb'+i).innerHTML=''});
+$('score').textContent='';
+});
+
+function resize(){
+var w=stage.clientWidth,h=stage.clientHeight;
+if(!w||!h)return;
+renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+}
+if(window.ResizeObserver)new ResizeObserver(resize).observe(stage);
+window.addEventListener('resize',resize);
+resize();
+sync();
+
+var clock=new THREE.Clock(),tmp=new THREE.Vector3(),RIP=[0,.25,.5,.75];
+function loop(){
+requestAnimationFrame(loop);
+var dt=Math.min(clock.getDelta(),.05),t=clock.elapsedTime;
+var tg=P.ov?1:0;
+P.ovT+=(tg-P.ovT)*Math.min(1,dt*3);
+var o=P.ovT,e=o*o*(3-2*o);
+D.g.position.set(
+apart.x+(A.g.position.x-apart.x)*e,
+apart.y+Math.sin(t*1.6)*.05*(1-e)+(A.g.position.y-apart.y)*e,
+apart.z+(A.g.position.z-apart.z)*e);
+D.g.rotation.y=apartRot*(1-e);
+D.mat.opacity=1-.4*e;D.mat.depthWrite=e<.5;
+P.pulse*=Math.exp(-dt*1.4);
+A.mat.emissive.setRGB(0,.45*P.pulse,.2*P.pulse);
+D.mat.emissive.setRGB(0,.45*P.pulse,.2*P.pulse);
+ribMat.uniforms.t.value=t;
+var cnt=Math.floor(NP*P.flow);
+for(var i=0;i<cnt;i++){
+pv[i]+=9.8*.35*dt;
+pp[i*3+1]-=pv[i]*dt;
+if(pp[i*3+1]<WBOT)resetP(i,false);
+pp[i*3+2]=WZ+.08+(WTOP-pp[i*3+1])*.05+Math.sin(i*12.9898)*.05;
+}
+pg.attributes.position.needsUpdate=true;
+for(var j=0;j<NM;j++){
+mp[j*3+1]+=dt*.32;
+mp[j*3]+=Math.sin(t*.7+j)*dt*.12;
+if(mp[j*3+1]>2.6)resetM(j,false);
+}
+mg.attributes.position.needsUpdate=true;
+ripples.forEach(function(m,k){
+var u=(t*.45+RIP[k])%1;
+m.scale.setScalar(.2+u*2.3);
+m.material.opacity=(1-u)*.65*P.flow;
+});
+glow.material.color.setHSL(.55+Math.sin(t*.5)*.03,.9,.55);
+if(fly){
+fly.n++;
+camera.position.lerp(fly.p,.07);controls.target.lerp(fly.t,.07);
+if(fly.n>110)fly=null;
+}
+controls.update();
+var w=stage.clientWidth,h=stage.clientHeight;
+HS.forEach(function(hs,i){
+var el=hsEls[i];
+hs.pt().getWorldPosition(tmp);
+tmp.project(camera);
+if(tmp.z>1||tmp.z<-1){el.style.display='none';return}
+el.style.display='block';
+el.style.transform='translate('+((tmp.x*.5+.5)*w)+'px,'+((-tmp.y*.5+.5)*h)+'px)';
+});
+renderer.render(scene,camera);
+}
+loop();
+})();
+</script>
+</body>
+</html>
